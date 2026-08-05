@@ -21,6 +21,17 @@ Subagent (general-purpose):
 
     Read the task brief: [BRIEF_FILE]
 
+    ## Interfaces
+
+    This task was built in parallel with sibling tasks against these exact
+    interfaces, which the fix must still honor:
+
+    [INTERFACES]
+
+    A fix that changed a name, signature, or shape listed above is NOT
+    addressed, however well it solves the original finding — it breaks the
+    siblings. Flag it as new breakage.
+
     ## The Findings Under Verification
 
     [FINDINGS]
@@ -92,14 +103,16 @@ Subagent (general-purpose):
 ```
 
 **Placeholders:**
-- `[MODEL]` — REQUIRED: reviewer model per SKILL.md Model Selection; scoped
-  re-reviews of small fix diffs take a cheap-to-mid tier
+- `[MODEL]` — REQUIRED: reviewer model per SKILL.md Model Selection; Sonnet for
+  a small fix diff, Opus when the fix touched a shared interface
 - `[BRIEF_FILE]` — the task brief file (same file the implementer worked from)
+- `[INTERFACES]` — the same verbatim interfaces the implementer was
+  dispatched with; "None" if this task shared no interface
 - `[FINDINGS]` — the Critical/Important findings and spec gaps from the
   previous review, copied verbatim, one per bullet
 - `[REPORT_FILE]` — the implementer's report file (fix reports appended)
 - `[FIX_BASE_SHA]` — the head the previous review saw
-- `[HEAD_SHA]` — current commit
+- `[HEAD_SHA]` — this task's fix commit
 - `[DIFF_FILE]` — the path `scripts/review-package PLAN_FILE FIX_BASE HEAD` printed
 
 **Re-reviewer returns:** per-finding verdicts (ADDRESSED / NOT ADDRESSED),

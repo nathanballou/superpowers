@@ -1,13 +1,76 @@
 ## Subagent dispatch requires multi-agent support
 
-Add to your Codex config (`~/.codex/config.toml`):
+For V2 workers pinned to Luna at maximum reasoning, use runtime `0.147.0-alpha.10` or newer. The older `0.147.0-alpha.1.2` desktop-bundled runtime rejects Luna workers even when Luna is available in the model picker.
+
+Install and verify the tested terminal runtime:
+
+```bash
+npm install --global @openai/codex@0.147.0-alpha.10
+hash -r
+command -v codex
+codex --version
+```
+
+Configure `~/.codex/config.toml`:
 
 ```toml
 [features]
 multi_agent = true
+multi_agent_v2 = true
+
+[multi_agent_v2]
+max_concurrent_threads_per_session = 18
+expose_spawn_agent_model_overrides = true
+
+[agents]
+max_concurrent_threads_per_session = 8
+default_subagent_model = "gpt-5.6-luna"
+default_subagent_reasoning_effort = "max"
+
+[agents.luna]
+description = "General-purpose worker pinned to Luna at maximum reasoning."
+config_file = "agents/luna.toml"
 ```
 
-This enables `spawn_agent`, `wait_agent`, and `close_agent` for skills like `dispatching-parallel-agents` and `subagent-driven-development`. When using subagent-driven-development, close reviewer subagents when their review returns. Keep each implementer subagent open until its task's review passes — the fix loop resumes the implementer — then close it. If your harness cannot send another message to a spawned agent, dispatch each fix round as a fresh implementer carrying the brief, the report file, and the findings.
+Create `~/.codex/agents/luna.toml`:
+
+```toml
+name = "luna"
+description = "General-purpose worker pinned to Luna at maximum reasoning."
+model = "gpt-5.6-luna"
+model_reasoning_effort = "max"
+developer_instructions = """
+Complete the delegated task precisely and return concise, evidence-backed results to the parent agent.
+Do not substitute another model.
+"""
+```
+
+Restart in a fresh terminal process after changing runtime or configuration. Spawn with `agent_type = "luna"` and `fork_turns = "none"`. Do not pass explicit model or reasoning overrides: the custom agent file owns those values. A full-history fork inherits the parent agent type and cannot select the custom Luna role.
+
+Verify a real child session reports all three values before relying on the setup:
+
+```text
+model=gpt-5.6-luna
+effort=max
+multi_agent_version=v2
+```
+
+If the router reports `Available models: gpt-5.6-sol, gpt-5.6-terra`, confirm the active terminal resolves to runtime `0.147.0-alpha.10` or newer. Do not substitute another model.
+
+This setup enables `spawn_agent`, `wait_agent`, and `close_agent` for skills like `dispatching-parallel-agents` and `subagent-driven-development`. The V2 cap is session-wide; it is not a recursive worker count per thread. When using subagent-driven-development, close reviewer subagents when their review returns. Keep each implementer subagent open until its task's review passes — the fix loop resumes the implementer — then close it. If your harness cannot send another message to a spawned agent, dispatch each fix round as a fresh implementer carrying the brief, the report file, and the findings.
+
+### Running a wave concurrently
+
+Skills that fan work out describe it as dispatching everything "in one message" — that is Claude Code's mechanism, where several tool calls in a single turn run concurrently. Codex's equivalent is the order of the two primitives, not the turn boundary:
+
+- `spawn_agent` starts an agent and returns; it does not block.
+- `wait_agent` blocks on one agent's result.
+
+So concurrency means **every `spawn_agent` for the wave goes out before your first `wait_agent`**. Collecting may then take one `wait_agent` call or several, depending on how many results a single call returns — that part does not affect concurrency. What does: a `spawn_agent`/`wait_agent` pair per task runs the wave sequentially and throws the parallelism away, even though every individual call looks correct.
+
+Collect results with `wait_agent`, never the bare `wait` tool — `wait` is the exec/wait surface and is not how spawned-agent results are collected.
+
+Your harness may report these tools namespaced (`collaboration.spawn_agent`). The bare names above are what skills reference; use whichever form your tool list actually exposes.
 
 ## Environment Detection
 

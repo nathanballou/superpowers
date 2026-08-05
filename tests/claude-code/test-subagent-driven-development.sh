@@ -176,4 +176,59 @@ fi
 
 echo ""
 
+# Test 10: Verify independent tasks fan out concurrently
+echo "Test 10: Parallel fan-out..."
+
+output=$(run_claude "In subagent-driven-development, a plan has three tasks with no dependencies between them. Answer using exactly this structure:
+Dispatch: <one at a time or all at once>
+Dispatches per message: <one or multiple>" "$CLAUDE_PROMPT_TIMEOUT")
+
+if assert_contains "$output" "Dispatch:.*all at once\|Dispatch:.*parallel\|Dispatch:.*concurrent" "Independent tasks dispatch together"; then
+    : # pass
+else
+    exit 1
+fi
+
+if assert_contains "$output" "Dispatches per message:.*multiple" "Multiple dispatches in one message"; then
+    : # pass
+else
+    exit 1
+fi
+
+echo ""
+
+# Test 11: Verify shared interfaces are frozen before fan-out
+echo "Test 11: Contract freeze before parallel work..."
+
+output=$(run_claude "In subagent-driven-development, two tasks in the same wave both use a shared type. What must happen before they are dispatched, and what should an implementer do if it decides that shared interface is wrong?" "$CLAUDE_PROMPT_TIMEOUT")
+
+if assert_contains "$output" "freez\|frozen\|contract\|settle.*interface\|pin.*interface" "Shared interfaces frozen before dispatch"; then
+    : # pass
+else
+    exit 1
+fi
+
+if assert_contains "$output" "CONTRACT_CHANGE\|stop\|halt\|escalat\|report.*controller" "Implementer escalates instead of changing it"; then
+    : # pass
+else
+    exit 1
+fi
+
+echo ""
+
+# Test 12: Verify the integration barrier runs the suite
+echo "Test 12: Integration barrier..."
+
+output=$(run_claude "In subagent-driven-development, three tasks ran in parallel and each reported its own test suite passing. Answer using exactly this structure:
+Full suite re-run after integration: <yes or no>
+Reason: <one sentence>" "$CLAUDE_PROMPT_TIMEOUT")
+
+if assert_contains "$output" "Full suite re-run after integration:.*yes" "Runs the suite on the integrated tree"; then
+    : # pass
+else
+    exit 1
+fi
+
+echo ""
+
 echo "=== All subagent-driven-development skill tests passed ==="

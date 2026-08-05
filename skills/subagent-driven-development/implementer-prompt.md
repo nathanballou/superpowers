@@ -19,6 +19,38 @@ Subagent (general-purpose):
 
     [Scene-setting: where this fits, dependencies, architectural context]
 
+    ## Your Files
+
+    Work in: [DIRECTORY]. Other tasks are editing this same checkout right
+    now, so these files are yours and no one else's:
+
+    [FILE_SET]
+
+    - Do not create, edit, or delete files outside that set.
+    - Do not run git at all — no commits, no staging, no branch operations.
+      The controller commits your work.
+    - Run focused tests only. Do NOT run the full suite, a full build, or
+      anything that binds a fixed port or writes shared build artifacts —
+      a sibling task is running at the same time. The controller runs the full
+      suite once everyone is done.
+    - If your task requires touching a file outside your set, STOP and report
+      NEEDS_CONTEXT naming the file. Do not touch it.
+
+    ## Interfaces
+
+    These are the exact names, signatures, and shapes crossing the boundary
+    between your task and its neighbors. Sibling tasks are being built against
+    this same text right now, in parallel, by agents you cannot talk to. The
+    code you consume may not exist in the checkout yet — build to the
+    signatures as written:
+
+    [INTERFACES]
+
+    If you conclude one of these is wrong or unworkable, do NOT change it and
+    do NOT work around it. Stop and report status CONTRACT_CHANGE with the
+    interface, the problem, and your proposed replacement. The controller owns
+    this decision because changing it invalidates your siblings' work.
+
     ## Before You Begin
 
     If you have questions about:
@@ -35,17 +67,19 @@ Subagent (general-purpose):
     1. Implement exactly what the task specifies
     2. Write tests (following TDD if task says to)
     3. Verify implementation works
-    4. Commit your work
-    5. Self-review (see below)
-    6. Report back
-
-    Work from: [directory]
+    4. Self-review (see below)
+    5. Report back — the controller commits your work
 
     **While you work:** If you encounter something unexpected or unclear, **ask questions**.
     It's always OK to pause and clarify. Don't guess or make assumptions.
 
-    While iterating, run the focused test for what you're changing; run the
-    full suite once before committing, not after every edit.
+    Run the focused tests for what you're changing, not the full suite — see
+    Your Files.
+
+    Your task is one of several running concurrently. Stay inside your task
+    and your files: do not "helpfully" fix something you noticed in another
+    task's territory, and do not adapt your interfaces to code a sibling task
+    is still writing. Report what you noticed instead.
 
     ## Code Organization
 
@@ -76,6 +110,9 @@ Subagent (general-purpose):
     specifically what you're stuck on, what you've tried, and what kind of help you need.
     The controller can provide more context, re-dispatch with a more capable model,
     or break the task into smaller pieces.
+
+    Escalate promptly. Sibling tasks are waiting on this wave's barrier, so a
+    quick BLOCKED is far cheaper than a slow guess.
 
     ## Before Reporting Back: Self-Review
 
@@ -127,16 +164,37 @@ Subagent (general-purpose):
 
     Then report back with ONLY (under 15 lines — the detail lives in the
     report file):
-    - **Status:** DONE | DONE_WITH_CONCERNS | BLOCKED | NEEDS_CONTEXT
-    - Commits created (short SHA + subject)
+    - **Status:** DONE | DONE_WITH_CONCERNS | BLOCKED | NEEDS_CONTEXT | CONTRACT_CHANGE
+    - Files you changed
     - One-line test summary (e.g. "14/14 passing, output pristine")
     - Your concerns, if any
     - The report file path
 
-    If BLOCKED or NEEDS_CONTEXT, put the specifics in the final message
-    itself — the controller acts on it directly.
+    If BLOCKED, NEEDS_CONTEXT, or CONTRACT_CHANGE, put the specifics in the
+    final message itself — the controller acts on it directly.
 
     Use DONE_WITH_CONCERNS if you completed the work but have doubts about correctness.
     Use BLOCKED if you cannot complete the task. Use NEEDS_CONTEXT if you need
-    information that wasn't provided. Never silently produce work you're unsure about.
+    information that wasn't provided — including a file outside your set. Use
+    CONTRACT_CHANGE if a shared interface must change before this task can be
+    built correctly. Never silently produce work you're unsure about, and never
+    quietly redefine a shared interface.
 ```
+
+**Placeholders:**
+- `[MODEL]` — REQUIRED: implementer model per SKILL.md Model Selection
+- `[BRIEF_FILE]` — REQUIRED: path from `scripts/task-brief PLAN N`
+- `[REPORT_FILE]` — REQUIRED: named after the brief
+  (`…/task-N-brief.md` → `…/task-N-report.md`)
+- `[DIRECTORY]` — the checkout every task in this wave shares
+- `[FILE_SET]` — this task's files, from the plan's **Files:** block
+  (Create / Modify / Test). Grouping guarantees no sibling in this wave names
+  the same file.
+- `[INTERFACES]` — the plan's **Interfaces:** Consumes and Produces entries for
+  this task, copied verbatim, plus any shared interface the plan left vague
+  that the controller settled. Paraphrasing into two dispatches creates two
+  interfaces. If nothing crosses a task boundary, say "None — this task shares
+  no interface with a concurrent task."
+
+**Implementer returns:** status, files changed, one-line test summary,
+concerns, report file path.

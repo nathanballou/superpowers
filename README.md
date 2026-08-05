@@ -201,7 +201,7 @@ The Pi package loads the Superpowers skills and a small extension that injects t
 
 3. **writing-plans** - Activates with approved design. Breaks work into bite-sized tasks (2-5 minutes each). Every task has exact file paths, complete code, verification steps.
 
-4. **subagent-driven-development** or **executing-plans** - Activates with plan. Dispatches fresh subagent per task with two-stage review (spec compliance, then code quality), or executes in batches with human checkpoints.
+4. **subagent-driven-development** or **executing-plans** - Activates with plan. Groups the plan's independent tasks into waves, dispatches a fresh subagent per task concurrently within each wave, reviews each for spec compliance then code quality, and runs the suite on the combined result before the next wave — or executes in batches with human checkpoints.
 
 5. **test-driven-development** - Activates during implementation. Enforces RED-GREEN-REFACTOR: write failing test, watch it fail, write minimal code, watch it pass, commit. Deletes code written before tests.
 
@@ -231,7 +231,7 @@ The Pi package loads the Superpowers skills and a small extension that injects t
 - **receiving-code-review** - Responding to feedback
 - **using-git-worktrees** - Parallel development branches
 - **finishing-a-development-branch** - Merge/PR decision workflow
-- **subagent-driven-development** - Fast iteration with two-stage review (spec compliance, then code quality)
+- **subagent-driven-development** - Parallel waves of independent tasks, each reviewed for spec compliance then code quality
 
 **Meta**
 - **writing-skills** - Create new skills following best practices (includes testing methodology)

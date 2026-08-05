@@ -25,6 +25,20 @@ Subagent (general-purpose):
     Global constraints from the spec/design that bind this task:
     [GLOBAL_CONSTRAINTS]
 
+    ## Interfaces
+
+    This task was built in parallel with sibling tasks, against these exact
+    interfaces. The siblings were built against the same text and are not in
+    your diff:
+
+    [INTERFACES]
+
+    Check conformance exactly: names, signatures, types, error values, config
+    keys, file paths. A near-miss — right shape, different name; extra
+    optional parameter; a field renamed "more clearly" — is an Important
+    finding, not a Minor one. It will fail at integration, and the diff in
+    front of you is the only place it can still be caught cheaply.
+
     ## What the Implementer Claims They Built
 
     Read the implementer's report: [REPORT_FILE]
@@ -88,7 +102,10 @@ Subagent (general-purpose):
 
     If a requirement cannot be verified from this diff alone (it lives in
     unchanged code or spans tasks), report it as a ⚠️ item instead of
-    broadening your search.
+    broadening your search. Concurrent sibling tasks are a common cause: their
+    code does not exist in your diff and may not exist in the checkout yet.
+    Do not go looking for it, and do not treat its absence as a defect — name
+    the dependency in the ⚠️ item and let the controller resolve it.
 
     ## Part 2: Code Quality
 
@@ -146,6 +163,12 @@ Subagent (general-purpose):
       diff alone, and what the controller should check — report alongside the
       ✅/❌ verdict for everything you could verify]
 
+    ### Interface Conformance
+
+    - ✅ Conforms | ❌ Deviates: [each interface this diff implements or
+      consumes, with file:line and the exact difference]
+    - "N/A — no shared interfaces" if the block above was empty
+
     ### Strengths
     [What's well done? Be specific.]
 
@@ -166,20 +189,26 @@ Subagent (general-purpose):
 ```
 
 **Placeholders:**
-- `[MODEL]` — REQUIRED: reviewer model per SKILL.md Model Selection
+- `[MODEL]` — REQUIRED: reviewer model per SKILL.md Model Selection (Opus for
+  task reviews)
 - `[BRIEF_FILE]` — REQUIRED: the task brief file (`scripts/task-brief PLAN N`
   prints the path; same file the implementer worked from)
 - `[GLOBAL_CONSTRAINTS]` — the binding requirements copied verbatim from
   the plan's Global Constraints section or the spec: exact values, formats,
   and stated relationships between components (not process rules — those
   are already in this template)
+- `[INTERFACES]` — the same verbatim entries the implementer's dispatch
+  carried (the plan's Consumes/Produces for this task). Empty only when this
+  task shares no interface with a concurrent task.
 - `[REPORT_FILE]` — REQUIRED: the file the implementer wrote its detailed
   report to
-- `[BASE_SHA]` — commit before this task
-- `[HEAD_SHA]` — current commit
+- `[BASE_SHA]` — this task's commit's parent, NOT the wave base. The wave's
+  commits are sequential on one branch, so the wave base would pull sibling
+  tasks into this diff.
+- `[HEAD_SHA]` — this task's own commit
 - `[DIFF_FILE]` — REQUIRED: the path the controller wrote the review
   package to (`scripts/review-package PLAN_FILE BASE HEAD` prints the unique
-  path it wrote; the package never enters the controller's context)
+  path it wrote; the package never enters the controller's context).
 
-**Reviewer returns:** Spec Compliance verdict (✅/❌/⚠️), Strengths, Issues
-(Critical/Important/Minor), Task quality verdict
+**Reviewer returns:** Spec Compliance verdict (✅/❌/⚠️), Interface Conformance
+verdict, Strengths, Issues (Critical/Important/Minor), Task quality verdict
