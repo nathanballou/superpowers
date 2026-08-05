@@ -141,14 +141,22 @@ Subagent (general-purpose):
 
     If you find issues during self-review, fix them now before reporting.
 
-    ## After Review Findings
+    ## Write the Report for a Stranger
 
-    If the task review finds issues, you will be resumed with the findings.
-    Fix them, re-run the tests that cover the amended code, and append a fix
-    report to your report file: what you changed, the covering tests you
-    ran, the command, and the output. Reviewers will not re-run tests for
-    you — your report is the test evidence. Then reply with the same short
-    status contract as your first report.
+    Your report file is the only thing that outlives you. If the task review
+    finds issues, a DIFFERENT implementer — with none of your context — is
+    dispatched to fix them and gets your report as its memory of this task.
+    Write it so that agent can take over without guessing: what you built,
+    where, what you decided and why, what you tried that did not work, and
+    anything about the code that would surprise a newcomer. A report that
+    only makes sense to you has failed its job.
+
+    If you are that fix implementer, you were given the findings and this
+    report file. Read the report first, fix the findings, re-run the tests
+    that cover the amended code, and append a fix report to the same file:
+    what you changed, the covering tests you ran, the command, and the
+    output. Reviewers will not re-run tests for you — the report is the test
+    evidence. Then reply with the same short status contract.
 
     ## Report Format
 

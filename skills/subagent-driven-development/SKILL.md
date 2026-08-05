@@ -276,7 +276,7 @@ mistake multiplies by the wave's width.
 | Implementer — multi-file integration, pattern matching, debugging | **Sonnet** |
 | Task reviewer | **Opus** |
 | Scoped re-reviewer | **Sonnet** (Opus if the fix touched a shared interface) |
-| Fix rounds 1–3 | same model as the implementer being resumed |
+| Fix rounds 1–3 | same tier as the original implementer |
 | Fix rounds 4–5 | one tier above the stuck implementer, Opus at round 5 |
 | Suite-failure fix at the barrier | **Sonnet** (Opus if two tasks disagree on behavior) |
 | Final whole-branch review | **Opus** |
@@ -364,8 +364,9 @@ its task, its interfaces, its files, and the global constraints. Nothing else.
 If an earlier task parked a finding in the area this task touches, carry a
 pointer to that ledger entry in the dispatch.
 
-Record each implementer's agent identity from its dispatch result — fix-loop
-rounds 1–3 resume that agent.
+You do not need to track agent identities for the fix loop — every fix round
+is a fresh dispatch. Keep an agent addressable only while it is still working,
+in case it asks you a question mid-task.
 
 Ledger the fan-out: `Wave <W>: dispatched tasks <list> (base <base7>)`
 
@@ -495,21 +496,37 @@ Before the loop starts, two routes leave it immediately:
 Everything else enters the loop. A fix round is one fix dispatch plus one
 scoped re-review. Five rounds maximum per task.
 
-**Rounds 1–3 — resume the original implementer.** Send it the open findings
-verbatim. Its context is intact: it knows the task, the code, and its own
-choices. If your harness cannot send another message to a live subagent,
-dispatch a fresh implementer carrying the brief path, the report-file path,
-its file set, and the findings — the report file is the persistent memory
-either way.
+**Every fix round is a fresh implementer.** Dispatch it with the brief path,
+the report-file path, its file set, the interfaces, and the open findings
+verbatim. Do not message the subagent that wrote the code.
 
-**Rounds 4–5 — dispatch a fresh implementer one tier up** (per Model
-Selection), with the brief path, the report-file path, the file set, the open
-findings, and this framing: "A prior implementer attempted this task [N]
-times; you own it now. Read the report file for what was tried." A loop that
-survives three resumes usually means the implementer cannot see its own
-problem — fresh eyes and a capability bump in one move.
+A live subagent's intact context looks like the cheaper option and mostly
+isn't. It has to stay open through commit, review, and adjudication — and on a
+wide wave that is one held-open agent per task, not one. By the time findings
+arrive it may have compacted and lost the very context you were paying to
+keep, and you cannot tell from the outside whether it did. Harnesses differ in
+whether they can deliver a message to a live agent at all, and some queue it
+without interrupting. The report file removes all of that: it is written to
+disk, it survives compaction on both sides, and it makes every round identical
+on every harness.
 
-**Every round, either way:** the implementer fixes, re-runs the tests
+This is why the report file must read as a handoff to a stranger, not a
+memo to yourself. If a fresh implementer cannot resume from it, it is
+underwritten — that is a defect in the report, not a reason to keep an agent
+alive.
+
+**The one true continuation:** an agent that is *still working* and has asked
+you something. Answering it finishes a turn already in flight, so reply on the
+live agent. Once an agent has reported and its work is committed, anything
+further is new work with a new brief — dispatch fresh.
+
+**Rounds 1–3** use the same tier as the original implementer. **Rounds 4–5 go
+one tier up** (per Model Selection), with this framing: "A prior implementer
+attempted this task [N] times; you own it now. Read the report file for what
+was tried." Three failed rounds means the approach in that report is not
+working, so the escalation buys reasoning the earlier tier did not have.
+
+**Every round:** the implementer fixes, re-runs the tests
 covering the amended code, appends its fix report to the same report file,
 and returns the short contract. Before re-dispatching the reviewer, confirm
 the fix report contains the covering tests, the command run, and the output;
@@ -627,7 +644,9 @@ Use superpowers:finishing-a-development-branch.
 | "Every worker's tests passed, skip the suite run" | Workers ran focused tests against a tree without their siblings' work. The barrier run is the only one that has seen the combination. |
 | "Every plan needs a wave grouping" | Scale it to the plan. One task shares nothing with anyone; a one-line change needs no grouping and no delegation. |
 | "Close enough on spec compliance" | Reviewer found spec gaps = not done. Fix or hit the cap and adjudicate — those are the only exits. |
-| "I'll fix it myself, dispatching is overhead" | Controller fixes pollute your context and skip review. Resume the implementer. |
+| "I'll fix it myself, dispatching is overhead" | Controller fixes pollute your context and skip review. Dispatch a fresh implementer with the findings. |
+| "The original implementer already has the context, I'll just message it" | It has been open through commit and review and may have compacted — you cannot tell from outside. Fresh dispatch + report file is identical on every harness and cheaper than a wave of held-open agents. |
+| "I'll keep the implementers open in case the review finds something" | That is N idle agents per wave betting on context that may already be gone. Collect, close, and dispatch fresh if findings arrive. |
 | "One more round will converge" | Past the cap, rounds don't converge — the failure is structural. Adjudicate and route. |
 | "This finding is obviously wrong, I'll drop it" | You adjudicate only at the cap, and every ruling is a ledger entry. Silent discards are forbidden. |
 | "The fix was small, skip the re-review" | Unreviewed fixes are how regressions land. Every round ends with a scoped re-review. |
@@ -638,6 +657,8 @@ Use superpowers:finishing-a-development-branch.
 - You are about to dispatch the next wave while a task in this one is unreviewed
 - You are about to run a coding-agent CLI through Bash to stand in for a subagent
 - You are waiting on one dispatch in a wave before the rest have gone out
+- You are messaging a subagent that already reported, instead of dispatching fresh
+- You are holding agents open through review "in case" findings come back
 - Two tasks in one wave name the same file in their Files blocks
 - A dispatch has no interface text but the task consumes another task's output
 - You closed a wave without running the full suite
@@ -675,8 +696,8 @@ Reviewer 1: Spec ✅, quality Approved.
 Reviewer 2: Spec ✅, quality Approved.
 Reviewer 4: Spec ❌ — Logger drops the level field (src/log/adapter.ts:31).
 
-[Fix round 1: resume implementer 4 with the finding]
-Implementer 4: Added level passthrough. 9/9 focused passing. Fix report appended.
+[Fix round 1: fresh implementer for task 4 — brief, report file, findings]
+Fix implementer: Added level passthrough. 9/9 focused passing. Fix report appended.
 [Commit the fix; scoped re-review, sonnet]: ADDRESSED. No new breakage.
 
 [Full suite: 84/84 passing]

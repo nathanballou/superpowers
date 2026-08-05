@@ -57,7 +57,13 @@ multi_agent_version=v2
 
 If the router reports `Available models: gpt-5.6-sol, gpt-5.6-terra`, confirm the active terminal resolves to runtime `0.147.0-alpha.10` or newer. Do not substitute another model.
 
-This setup enables `spawn_agent`, `wait_agent`, and `close_agent` for skills like `dispatching-parallel-agents` and `subagent-driven-development`. The V2 cap is session-wide; it is not a recursive worker count per thread. When using subagent-driven-development, close reviewer subagents when their review returns. Keep each implementer subagent open until its task's review passes — the fix loop resumes the implementer — then close it. If your harness cannot send another message to a spawned agent, dispatch each fix round as a fresh implementer carrying the brief, the report file, and the findings.
+This setup enables `spawn_agent`, `wait_agent`, and `close_agent` for skills like `dispatching-parallel-agents` and `subagent-driven-development`. The V2 cap is session-wide; it is not a recursive worker count per thread.
+
+**Keep workers independent and short-lived.** `close_agent` as soon as a worker's result is collected — implementers included, not just reviewers. Do not hold an agent open expecting to send it more work later.
+
+This matters more on Codex than elsewhere. Worker context is comparatively small and compaction is common, so a worker held open across a commit-and-review cycle is likely to have compacted away the context you were keeping it alive for — and nothing in the tool result tells you that happened. `send_input` also delivers queued rather than interrupting, so a message to a live worker may not be read when you expect. Every unit of work therefore gets its own `spawn_agent` carrying everything it needs: the brief, the report file, the file set, the interfaces, and any findings. The report file on disk is the memory that crosses agent boundaries; a live agent's context is not.
+
+The one exception is a worker that is still mid-task and has asked a question — answering it finishes a turn already in flight. Once a worker has reported, it is done: collect, close, and dispatch fresh for anything further.
 
 ### Running a wave concurrently
 

@@ -231,4 +231,32 @@ fi
 
 echo ""
 
+# Test 13: Verify fix rounds prefer a fresh subagent over messaging a live one
+echo "Test 13: Fix rounds dispatch fresh..."
+
+output=$(run_claude "In subagent-driven-development, a task reviewer returns an Important finding. The implementer that wrote the code has already reported and its work is committed. Answer using exactly this structure:
+Fix round uses: <fresh subagent or the original implementer>
+What carries the prior context: <what>
+Message a live subagent when: <when>" "$CLAUDE_PROMPT_TIMEOUT")
+
+if assert_contains "$output" "Fix round uses:.*fresh" "Fix round dispatches a fresh subagent"; then
+    : # pass
+else
+    exit 1
+fi
+
+if assert_contains "$output" "report file\|report" "Report file carries the context"; then
+    : # pass
+else
+    exit 1
+fi
+
+if assert_contains "$output" "still working\|mid-task\|question\|in flight\|has not reported\|hasn't reported" "Live messaging only for in-flight continuation"; then
+    : # pass
+else
+    exit 1
+fi
+
+echo ""
+
 echo "=== All subagent-driven-development skill tests passed ==="
