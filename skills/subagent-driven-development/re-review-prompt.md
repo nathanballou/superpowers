@@ -10,7 +10,7 @@ that the fix itself broke nothing.
 ```
 Subagent (general-purpose):
   description: "Re-review Task N fix round R"
-  model: [MODEL — REQUIRED: choose per SKILL.md Model Selection; an omitted
+  model: [MODEL — REQUIRED: choose per SKILL.md "Sizing Each Dispatch"; an omitted
          model silently inherits the session's most expensive one]
   prompt: |
     You are re-reviewing one task's fix round. A previous review produced
@@ -103,7 +103,7 @@ Subagent (general-purpose):
 ```
 
 **Placeholders:**
-- `[MODEL]` — REQUIRED: reviewer model per SKILL.md Model Selection; Sonnet for
+- `[MODEL]` — REQUIRED: reviewer model per SKILL.md "Sizing Each Dispatch"; Sonnet for
   a small fix diff, Opus when the fix touched a shared interface
 - `[BRIEF_FILE]` — the task brief file (same file the implementer worked from)
 - `[INTERFACES]` — the same verbatim interfaces the implementer was

@@ -5,7 +5,7 @@ Use this template when dispatching an implementer subagent.
 ```
 Subagent (general-purpose):
   description: "Implement Task N: [task name]"
-  model: [MODEL — REQUIRED: choose per SKILL.md Model Selection; an omitted
+  model: [MODEL — REQUIRED: choose per SKILL.md "Sizing Each Dispatch"; an omitted
          model silently inherits the session's most expensive one]
   prompt: |
     You are implementing Task N: [task name]
@@ -190,7 +190,7 @@ Subagent (general-purpose):
 ```
 
 **Placeholders:**
-- `[MODEL]` — REQUIRED: implementer model per SKILL.md Model Selection
+- `[MODEL]` — REQUIRED: implementer model per SKILL.md "Sizing Each Dispatch"
 - `[BRIEF_FILE]` — REQUIRED: path from `scripts/task-brief PLAN N`
 - `[REPORT_FILE]` — REQUIRED: named after the brief
   (`…/task-N-brief.md` → `…/task-N-report.md`)

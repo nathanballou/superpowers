@@ -258,43 +258,89 @@ build, or a task must run the suite mid-work — give those tasks their own
 worktrees via superpowers:using-git-worktrees, or put them in separate waves.
 Separate waves is usually the cheaper answer.
 
-## Model Selection
+## Sizing Each Dispatch
 
-Use the least powerful model that can handle each role. Implementation is
-mostly cheap; judgment is not.
+Every dispatch gets two decisions: **how capable a model** and **how much
+deliberation**. Both scale with the task, and on a wide wave both multiply by
+the wave's width — a tier too high on a 6-task wave is six overpayments, not
+one.
 
-**Always specify the model explicitly when dispatching a subagent.** An
-omitted model inherits your session's model — often the most capable and most
-expensive — which silently defeats this section. Across a wide wave that
-mistake multiplies by the wave's width.
+**Always specify the model explicitly.** An omitted model inherits your
+session's model — usually the most capable and most expensive — which silently
+defeats everything below.
 
-| Role | Tier |
+**Check what a routing layer does with that field.** A router that flattens every
+dispatch to one external tier makes this lever inert: a six-task wave costs the
+same per task whatever tier each names. Sizing is still worth doing for its own
+sake, but do not expect it to save money until you have confirmed the tier
+survives the hop.
+
+### Size from the brief, not the topic
+
+The question is never "is this domain hard?" It is "how much of the answer is
+already written down?" Grade each task on what its brief actually leaves open:
+
+| The brief… | Model |
 |---|---|
-| Implementer — plan contains the code to write (transcription + testing) | **Haiku** |
-| Implementer — single-file mechanical change | **Haiku** |
-| Implementer — default | **Sonnet** |
-| Implementer — multi-file integration, pattern matching, debugging | **Sonnet** |
-| Task reviewer | **Opus** |
-| Scoped re-reviewer | **Sonnet** (Opus if the fix touched a shared interface) |
-| Fix rounds 1–3 | same tier as the original implementer |
-| Fix rounds 4–5 | one tier above the stuck implementer, Opus at round 5 |
-| Suite-failure fix at the barrier | **Sonnet** (Opus if two tasks disagree on behavior) |
+| contains the code to write; task is transcribe + test | **Haiku** |
+| is one mechanical edit in one file (rename, flag, constant) | **Haiku** |
+| is one file, prose spec, with a clear in-repo pattern to copy | **Haiku** |
+| is one file with real logic to design | **Sonnet** |
+| spans multiple files, or integrates against an interface | **Sonnet** |
+| requires debugging, or resolving genuine spec ambiguity | **Sonnet** |
+
+Most waves are therefore a mix, not six copies of one tier. A wave where every
+task landed on Sonnet usually means you sized by topic instead of by brief —
+re-read them and ask which ones are transcription.
+
+Reviews price differently. A reviewer's whole job is judgment, and a missed
+defect costs a fix dispatch plus a re-review, so this is the wrong place to
+economize:
+
+| Review role | Model |
+|---|---|
+| Scoped re-review of a small fix diff | **Sonnet** |
+| Task review — mechanical task, small diff | **Sonnet** |
+| Task review — default | **Opus** |
+| Suite-failure fix at the barrier | **Sonnet** |
 | Final whole-branch review | **Opus** |
 
+Fix rounds: **1–3** keep the task's own tier; **4–5** go one tier up. Three
+failed rounds means the tier that wrote the defect cannot see it.
+
+**If your harness exposes a per-agent reasoning or effort setting** (Codex's
+`model_reasoning_effort`, a workflow runner's `effort`, an agent definition's
+frontmatter), set it to match — low for the Haiku rows, high for the Opus rows.
+Where there is no per-dispatch control, model tier is the whole lever; size by
+the table and move on rather than padding prompts with "think hard," which
+buys tokens rather than correctness.
+
+### Efficiency rules
+
+**Start at the floor and escalate on evidence.** Dispatch at the tier the
+table gives you. A BLOCKED report, a failed fix round, or a review that finds
+the worker misunderstood the task is evidence — guessing that a task "feels
+hard" is not.
+
+**Turn count beats token price.** Cost and wall-clock scale with how many
+turns a subagent takes, and an underpowered model routinely takes 2–3× the
+turns on multi-step work, costing more than the tier you avoided. Haiku is for
+tasks whose brief contains the code or one obvious edit. When a task needs a
+model to *design* rather than transcribe, Sonnet is the floor.
+
+**A cheap reviewer is a false economy.** A task review that misses a defect
+costs a fix dispatch plus a scoped re-review — several dispatches to save one
+tier on one review. Economize on implementers, where the brief carries the
+work; hold the line on reviewers, where judgment is the whole deliverable.
+
 Grouping the waves and settling underspecified interfaces are yours, not a
-subagent's — they are minutes of reading, and a dispatch to plan a plan costs
-more than the parallelism saves.
+subagent's — minutes of reading, and a dispatch to plan a plan costs more than
+the parallelism saves.
 
 A task that genuinely needs Opus to *implement* is a signal, not a model
 choice: it requires design judgment or broad codebase understanding, which
 means it probably should not run in parallel with anything. Give it a wave of
 its own.
-
-**Turn count beats token price.** Wall-clock and context cost scale with how
-many turns a subagent takes, and the cheapest models routinely take 2–3× the
-turns on multi-step work — costing more overall. Sonnet is the floor for
-implementers working from prose descriptions. Reserve Haiku for tasks whose
-brief contains the actual code or a single obvious edit.
 
 ## Dispatching Subagents
 
@@ -313,6 +359,14 @@ model selection, the harness cannot see or account for the work, the result
 contract dissolves into scraped stdout, and nothing you carefully constructed
 as context is actually delivered. It is the same phantom-state mistake as
 running `git worktree add` when a native worktree tool exists.
+
+**A routing layer is not the controller shelling out.** If your harness reroutes
+a native subagent call to another engine — preserving explicit model selection,
+delivering your context verbatim, and enforcing a schema'd return contract —
+the dispatch is still native and the prohibition above does not apply. What you
+do lose is accounting: the harness reports only the wrapper's own tokens, and
+the engine's real spend lands on a bill the harness cannot see. Size waves with
+that in mind, because the number in front of you is not the number.
 
 If your harness genuinely has no subagent primitive, this skill does not apply
 — use superpowers:executing-plans instead. Do not approximate subagents.
@@ -521,7 +575,7 @@ live agent. Once an agent has reported and its work is committed, anything
 further is new work with a new brief — dispatch fresh.
 
 **Rounds 1–3** use the same tier as the original implementer. **Rounds 4–5 go
-one tier up** (per Model Selection), with this framing: "A prior implementer
+one tier up** (per "Sizing Each Dispatch"), with this framing: "A prior implementer
 attempted this task [N] times; you own it now. Read the report file for what
 was tried." Three failed rounds means the approach in that report is not
 working, so the escalation buys reasoning the earlier tier did not have.

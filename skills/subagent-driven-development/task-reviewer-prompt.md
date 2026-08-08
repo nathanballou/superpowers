@@ -10,7 +10,7 @@ more, nothing less) and is well-built (clean, tested, maintainable)
 ```
 Subagent (general-purpose):
   description: "Review Task N (spec + quality)"
-  model: [MODEL — REQUIRED: choose per SKILL.md Model Selection; an omitted
+  model: [MODEL — REQUIRED: choose per SKILL.md "Sizing Each Dispatch"; an omitted
          model silently inherits the session's most expensive one]
   prompt: |
     You are reviewing one task's implementation: first whether it matches its
@@ -189,7 +189,7 @@ Subagent (general-purpose):
 ```
 
 **Placeholders:**
-- `[MODEL]` — REQUIRED: reviewer model per SKILL.md Model Selection (Opus for
+- `[MODEL]` — REQUIRED: reviewer model per SKILL.md "Sizing Each Dispatch" (Opus for
   task reviews)
 - `[BRIEF_FILE]` — REQUIRED: the task brief file (`scripts/task-brief PLAN N`
   prints the path; same file the implementer worked from)
